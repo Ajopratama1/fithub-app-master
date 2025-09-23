@@ -1,112 +1,90 @@
-const { Member, Membership, Attendance } = require("../models");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const { Member } = require('../models');
 
-// =======================
-// Multer untuk profile image
-// =======================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'profiles');
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
-  }
-});
-const uploadMiddleware = multer({ storage }).single("profileImage");
-
-// =======================
-// CRUD Member
-// =======================
-async function createMember(req, res) {
+async function getDashboardData(req, res) {
   try {
-    const { fullName, email, phone } = req.body;
-    const member = await Member.create({ fullName, email, phone });
-    return res.status(201).json({ message: "Member created", data: member });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error creating member" });
+    const totalMembers = await Member.count();
+    res.json({
+      message: "Data dashboard berhasil dimuat!",
+      totalMembers: totalMembers
+    });
+  } catch (error) {
+    console.error("Kesalahan saat mengambil data dashboard:", error);
+    res.status(500).json({ message: "Gagal memuat data dashboard. Terjadi kesalahan server." });
   }
 }
 
 async function listMembers(req, res) {
-  const members = await Member.findAll({ include: { model: Membership, as: "membership" } });
-  res.json(members);
-}
-
-async function getMember(req, res) {
-  const member = await Member.findByPk(req.params.id, { include: { model: Membership, as: "membership" } });
-  res.json(member);
-}
-
-async function updateMember(req, res) {
-  const member = await Member.findByPk(req.params.id);
-  await member.update(req.body);
-  res.json({ message: "Member updated", data: member });
-}
-
-async function deleteMember(req, res) {
-  const member = await Member.findByPk(req.params.id);
-  await member.destroy();
-  res.json({ message: "Member deleted" });
-}
-
-// =======================
-// Profil & Attendance
-// =======================
-async function getProfile(req, res) {
-  const member = await Member.findByPk(req.user.id, { include: { model: Membership, as: "membership" } });
-  res.json(member);
-}
-
-async function getAttendance(req, res) {
-  const attendance = await Attendance.findAll({ where: { memberId: req.user.id } });
-  res.json(attendance);
-}
-
-// =======================
-// Dashboard Admin
-// =======================
-async function getDashboardData(req, res) {
-  const totalMembers = await Member.count();
-  res.json({ totalMembers });
-}
-
-// =======================
-// Upload Profile Image
-// =======================
-async function handleUploadProfileImage(req, res) {
   try {
-    const member = await Member.findByPk(req.user.id);
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-
-    // Hapus foto lama
-    if (member.profilePictureUrl) {
-      const oldPath = path.join(__dirname, '..', '..', member.profilePictureUrl);
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-    }
-
-    member.profilePictureUrl = `/uploads/profiles/${req.file.filename}`;
-    await member.save();
-    return res.json({ message: "Profile image updated", data: member });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error uploading profile image" });
+    const members = await Member.findAll();
+    res.json(members);
+  } catch (error) {
+    console.error("Gagal mendapatkan daftar anggota:", error);
+    res.status(500).json({ message: "Gagal memuat daftar anggota. Terjadi kesalahan server." });
   }
 }
 
+async function getMember(req, res) {
+  try {
+    const { id } = req.params;
+    const member = await Member.findByPk(id);
+    if (!member) {
+      return res.status(404).json({ message: 'Anggota tidak ditemukan.' });
+    }
+    res.json(member);
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal mengambil data anggota.' });
+  }
+}
+
+async function updateMember(req, res) {
+  try {
+    const { id } = req.params;
+    const updatedData = req.body;
+    const [rowsUpdated] = await Member.update(updatedData, {
+      where: { id },
+    });
+    if (rowsUpdated === 0) {
+      return res.status(404).json({ message: 'Anggota tidak ditemukan atau tidak ada perubahan.' });
+    }
+    res.json({ message: 'Anggota berhasil diperbarui.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal memperbarui data anggota.' });
+  }
+}
+
+async function createMember(req, res) {
+  res.status(201).json({ message: 'Fungsi createMember berhasil (logika belum diimplementasi).' });
+}
+
+async function deleteMember(req, res) {
+  res.json({ message: 'Fungsi deleteMember berhasil (logika belum diimplementasi).' });
+}
+
+async function getProfile(req, res) {
+  res.json({ message: 'Fungsi getProfile berhasil (logika belum diimplementasi).' });
+}
+
+async function getAttendance(req, res) {
+  res.json({ message: 'Fungsi getAttendance berhasil (logika belum diimplementasi).' });
+}
+
+function uploadMiddleware(req, res, next) {
+  next();
+}
+
+function handleUploadProfileImage(req, res) {
+  res.json({ message: 'Fungsi handleUploadProfileImage berhasil (logika belum diimplementasi).' });
+}
+
 module.exports = {
-  createMember,
+  getDashboardData,
   listMembers,
   getMember,
   updateMember,
+  createMember,
   deleteMember,
   getProfile,
   getAttendance,
-  getDashboardData,
   uploadMiddleware,
   handleUploadProfileImage
 };

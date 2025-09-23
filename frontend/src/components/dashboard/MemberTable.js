@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Table, Button, Spinner, Alert } from 'react-bootstrap';
-import memberService from '../../services/memberService'; // ✅ Import objek layanan secara default
+import { useNavigate } from 'react-router-dom';
+import memberService from '../../services/memberService';
+import { FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 
 export default function MemberTable({ members = [], refresh }) {
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const navigate = useNavigate();
 
   const tableStyle = {
     borderRadius: '8px',
@@ -32,7 +35,6 @@ export default function MemberTable({ members = [], refresh }) {
     setDeletingId(id);
     setError(null);
     try {
-      // ✅ Panggil fungsi dari objek layanan
       await memberService.deleteMember(id);
       await refresh();
     } catch (err) {
@@ -42,6 +44,14 @@ export default function MemberTable({ members = [], refresh }) {
       setDeletingId(null);
     }
   }
+
+  const handleEditClick = (id) => {
+    navigate(`/admin/members/edit/${id}`);
+  };
+
+  const handleViewClick = (id) => {
+    navigate(`/admin/members/view/${id}`);
+  };
 
   return (
     <div className="table-responsive" style={tableStyle}>
@@ -53,14 +63,13 @@ export default function MemberTable({ members = [], refresh }) {
             <th>Nama</th>
             <th>Email</th>
             <th>Telepon</th>
-            <th>Kode QR</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
           {members.length > 0 ? (
             members.map(m => (
-              <tr 
+              <tr
                 key={m.id}
                 style={tableRowStyle}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
@@ -71,28 +80,32 @@ export default function MemberTable({ members = [], refresh }) {
                 <td>{m.email}</td>
                 <td>{m.phone}</td>
                 <td>
-                  {m.qrPath ? (
-                    <img 
-                      src={process.env.REACT_APP_API_URL.replace('/api', '') + m.qrPath} 
-                      alt="QR Code" 
-                      width={60} 
-                      className="img-fluid rounded" 
-                    />
-                  ) : (
-                    '-'
-                  )}
-                </td>
-                <td>
-                  <Button 
-                    size="sm" 
-                    variant="danger" 
+                  <Button
+                    size="sm"
+                    variant="info"
+                    onClick={() => handleViewClick(m.id)}
+                  >
+                    <FaEye />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="warning"
+                    onClick={() => handleEditClick(m.id)}
+                    className="ms-2"
+                  >
+                    <FaEdit />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
                     onClick={() => onDelete(m.id)}
                     disabled={deletingId === m.id}
+                    className="ms-2"
                   >
                     {deletingId === m.id ? (
                       <Spinner as="span" animation="border" size="sm" />
                     ) : (
-                      'Hapus'
+                      <FaTrash />
                     )}
                   </Button>
                 </td>
@@ -100,7 +113,7 @@ export default function MemberTable({ members = [], refresh }) {
             ))
           ) : (
             <tr>
-              <td colSpan={6} className="text-center">Tidak ada data anggota.</td>
+              <td colSpan={5} className="text-center">Tidak ada data anggota.</td>
             </tr>
           )}
         </tbody>

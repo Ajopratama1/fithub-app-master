@@ -1,8 +1,10 @@
 import api from "./api";
 
 const memberService = {
-  getAllMembers: () => api.get("/members"),
+  // Panggil rute backend yang baru dibuat
   getDashboardData: () => api.get("/members/dashboard"),
+
+  getAllMembers: () => api.get("/members"),
   createMember: (data) => api.post("/members", data),
   updateMember: (id, data) => api.put(`/members/${id}`, data),
   deleteMember: (id) => api.delete(`/members/${id}`),
@@ -12,7 +14,7 @@ const memberService = {
 
   uploadProfileImage: (formData) =>
     api.post("/members/profile-image", formData, {
-      headers: { "Content-Type": "multipart/form-data" }, // Authorization sudah otomatis lewat interceptor
+      headers: { "Content-Type": "multipart/form-data" },
     }),
 };
 
